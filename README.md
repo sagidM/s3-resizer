@@ -75,9 +75,9 @@ or
 > Pay attention to `__BUCKET_NAME__`
 
 * * * That page should closes after that action. So go on creating a lambda. And take a look at **Advanced settings**
-* * * * Allocate a memory 512
+* * * * Allocate 768mb memory
 * * * * Timeout could be 5 seconds
-> It's mooore than enough. And you shouldn't care of limits because images caches, which means lambda calls only for the first time.
+> It's mooore than enough. But you shouldn't care of limits because images caches, which means lambda is called only for the first time. For example, [large png 29mb image](http://www.berthiaumeescalier.com/images/contenu/file/Big__Small_Pumkins.png) converts to _150x150_ in 1.9s with 1024mb memory allocated, 3.7 with 512mb, and 7.2s with 256. _(I guess these such different results is because of [GC](https://en.wikipedia.org/wiki/Garbage_collection_(computer_science)))_. For normal images, results are nearly the same _(400-700 mls)_.
 * * * Click **Next**, **Create function**. And wait for 20-30 seconds. Lambda is created.
 
 ***
