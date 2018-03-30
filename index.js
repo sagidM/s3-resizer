@@ -4,16 +4,15 @@
 const AWS = require('aws-sdk')
 const S3 = new AWS.S3({signatureVersion: 'v4'});
 const Sharp = require('sharp');
-const Pattern = new RegExp("(.*/)?(.*)/(.*)");
+const PathPattern = new RegExp("(.*/)?(.*)/(.*)");
 
 // parameters
-const BUCKET = process.env.BUCKET;
-const URL = process.env.URL;
+const {BUCKET, URL} = process.env
 
 
-exports.handler = function(event, context, callback) {
+exports.handler = function(event, _context, callback) {
     var path = event.queryStringParameters.path;
-    var parts = Pattern.exec(path);
+    var parts = PathPattern.exec(path);
     var dir = parts[1] || '';
     var options = parts[2].split('_');
     var filename = parts[3];
@@ -40,10 +39,10 @@ exports.handler = function(event, context, callback) {
                     callback(null, {
                         statusCode: 400,
                         body: `Unknown func parameter "${func}"\n` +
-                              'For query ".../150x150_func", "_func" must be either empty or "_min" or "_max"',
+                              'For query ".../150x150_func", "_func" must be either empty, "_min" or "_max"',
                         headers: {"Content-Type": "text/plain"}
                     })
-                    return new Promise(() => {});
+                    return new Promise(() => {})  // the next then-blocks will never be executed
             }
 
             return img.withoutEnlargement().toBuffer();
