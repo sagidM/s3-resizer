@@ -5,7 +5,7 @@ It's AWS Lambda, which is a compute service that lets you run code without provi
 
 
 ## Demo
-https://kofon95.github.io/smartuploader/examples/4.s3-resizer.html
+https://sagidm.github.io/smartuploader/examples/4.s3-resizer.html
 
 
 ## What this lambda provides
@@ -48,7 +48,7 @@ or
 * * In **Configure function** page
 * * * Name a new lambda
 * * * In **Runtime** select **Node.js 6.10**
-* * * Upload a _.zip_ file (download it from [releases](https://github.com/kofon95/s3-resizer/releases))
+* * * Upload a _.zip_ file (download it from [releases](https://github.com/sagidM/s3-resizer/releases))
 * * * > You'll also need to set up two **Environment variables**, with _BUCKET_ and _URL_ as keys. But in this time, you don't know about that _URL_. It is **endpoint** which you'll see below.
 * * * Choose role which has permission to put any object or create a new one. To do that
 * * * * choose **Create a custom role** in role's list. It should open a new page in your browser. On that page
