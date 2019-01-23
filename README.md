@@ -147,7 +147,7 @@ or
 * * Go to lambda, click on **Test**, and paste this json:
 ```json
 {
-  "queryStringParameters": {"path": __YOUR_IMAGE_PATH_WITH_SIZE_PREFIX__}
+  "queryStringParameters": {"path": "__YOUR_IMAGE_PATH_WITH_SIZE_PREFIX__"}
 }
 ```
 > `__YOUR_IMAGE_PATH_WITH_SIZE_PREFIX__` - for example: `150x150/pretty_image.jpg`
