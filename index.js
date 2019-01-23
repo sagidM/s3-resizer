@@ -45,7 +45,7 @@ exports.handler = function(event, _context, callback) {
                     return new Promise(() => {})  // the next then-blocks will never be executed
             }
 
-            return img.withoutEnlargement().toBuffer();
+            return img.withoutEnlargement().rotate().toBuffer();
         })
         .then(result =>
             S3.putObject({
