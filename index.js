@@ -19,33 +19,45 @@ exports.handler = function(event, _context, callback) {
 
 
     var sizes = options[0].split("x");
-    var func = options.length > 1 ? options[1] : null;
+    var action = options.length > 1 ? options[1] : null;
+
+    if (action && action !== 'max' && action !== 'min') {
+        callback(null, {
+            statusCode: 400,
+            body: `Unknown func parameter "${action}"\n` +
+                  'For query ".../150x150_func", "_func" must be either empty, "_min" or "_max"',
+            headers: {"Content-Type": "text/plain"}
+        });
+        return;
+    }
 
     var contentType;
     S3.getObject({Bucket: BUCKET, Key: dir + filename})
         .promise()
         .then(data => {
             contentType = data.ContentType;
-            var img = Sharp(data.Body)
-                .resize(
-                    sizes[0] === 'AUTO' ? null : parseInt(sizes[0]),
-                    sizes[1] === 'AUTO' ? null : parseInt(sizes[1]));
-
-            switch (func){
-                case 'max': img = img.max(); break;
-                case 'min': img = img.min(); break;
-                case null: break;
+            var width = sizes[0] === 'AUTO' ? null : parseInt(sizes[0]);
+            var height = sizes[1] === 'AUTO' ? null : parseInt(sizes[1]);
+            var fit;
+            switch (action) {
+                case 'max':
+                    fit = 'inside';
+                    break;
+                case 'min':
+                    fit = 'outside';
+                    break
                 default:
-                    callback(null, {
-                        statusCode: 400,
-                        body: `Unknown func parameter "${func}"\n` +
-                              'For query ".../150x150_func", "_func" must be either empty, "_min" or "_max"',
-                        headers: {"Content-Type": "text/plain"}
-                    })
-                    return new Promise(() => {})  // the next then-blocks will never be executed
+                    fit = 'cover';
+                    break;
             }
-
-            return img.withoutEnlargement().toBuffer();
+            var options = {
+                withoutEnlargement: true,
+                fit
+            };
+            return Sharp(data.Body)
+                .resize(width, height, options)
+                .rotate()
+                .toBuffer();
         })
         .then(result =>
             S3.putObject({
