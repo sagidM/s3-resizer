@@ -19,12 +19,12 @@ exports.handler = function(event, _context, callback) {
 
 
     var sizes = options[0].split("x");
-    var func = options.length > 1 ? options[1] : null;
+    var action = options.length > 1 ? options[1] : null;
 
-    if (func && func !== 'max' && func !== 'min') {
+    if (action && action !== 'max' && action !== 'min') {
         callback(null, {
             statusCode: 400,
-            body: `Unknown func parameter "${func}"\n` +
+            body: `Unknown func parameter "${action}"\n` +
                   'For query ".../150x150_func", "_func" must be either empty, "_min" or "_max"',
             headers: {"Content-Type": "text/plain"}
         });
@@ -38,7 +38,22 @@ exports.handler = function(event, _context, callback) {
             contentType = data.ContentType;
             var width = sizes[0] === 'AUTO' ? null : parseInt(sizes[0]);
             var height = sizes[1] === 'AUTO' ? null : parseInt(sizes[1]);
-            var options = { withoutEnlargement: true };
+            var fit;
+            switch (action) {
+                case 'max':
+                    fit = 'inside';
+                    break;
+                case 'min':
+                    fit = 'outside';
+                    break
+                default:
+                    fit = 'cover';
+                    break;
+            }
+            var options = {
+                withoutEnlargement: true,
+                fit
+            };
             return Sharp(data.Body)
                 .resize(width, height, options)
                 .rotate()
