@@ -1,3 +1,5 @@
+## Adapted for integration with CloudFront
+
 ## What is it?
 
 It's AWS Lambda, which is a compute service that lets you run code without provisioning or managing servers.  

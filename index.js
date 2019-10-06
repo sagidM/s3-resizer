@@ -4,7 +4,6 @@
 const AWS = require('aws-sdk')
 const S3 = new AWS.S3({signatureVersion: 'v4'});
 const Sharp = require('sharp');
-//const PathPattern = new RegExp("(.*/)?(.*)/(.*)");
 const PathPattern = new RegExp("/(images/)rsz/(.*)/(.*)");
 
 // parameters
@@ -77,10 +76,6 @@ exports.handler = function(event, _context, callback) {
               }).catch(function(err) {
                 console.log(err);
               });
-            // callback(null, {
-            //     statusCode: 200,
-            //     body: result
-            // })
             const response = {
                 status: '200',
                 statusDescription: 'OK',
