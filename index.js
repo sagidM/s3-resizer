@@ -1,5 +1,6 @@
 'use strict'
 
+// this file is for lambda function used in API GateWay for image resize.
 
 const AWS = require('aws-sdk')
 const S3 = new AWS.S3({signatureVersion: 'v4'});
