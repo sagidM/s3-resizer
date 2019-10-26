@@ -4,7 +4,7 @@
 const AWS = require('aws-sdk')
 const S3 = new AWS.S3({signatureVersion: 'v4'});
 const Sharp = require('sharp');
-const PathPattern = new RegExp("(.*\/)?(.*)\/(.*)");
+const PathPattern = /(.*\/)?(.*)\/(.*)/;
 
 // parameters
 const {BUCKET, URL} = process.env
