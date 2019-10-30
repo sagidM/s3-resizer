@@ -1,13 +1,13 @@
 'use strict'
 
 
-const AWS = require('aws-sdk')
+const AWS = require('aws-sdk');
 const S3 = new AWS.S3({signatureVersion: 'v4'});
 const Sharp = require('sharp');
 const PathPattern = /(.*\/)?(.*)\/(.*)/;
 
 // parameters
-const {BUCKET, URL} = process.env
+const {BUCKET, URL} = process.env;
 
 
 exports.handler = async (event) => {
@@ -44,7 +44,7 @@ exports.handler = async (event) => {
                 break;
             case 'min':
                 fit = 'outside';
-                break
+                break;
             default:
                 fit = 'cover';
                 break;
