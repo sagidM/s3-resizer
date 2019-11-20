@@ -58,7 +58,8 @@ exports.handler = async (event) => {
             Body: result,
             Bucket: BUCKET,
             ContentType: data.ContentType,
-            Key: path
+            Key: path,
+            CacheControl: 'public, max-age=86400'
         }).promise();
 
         return {

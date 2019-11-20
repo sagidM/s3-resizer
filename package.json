@@ -2,7 +2,7 @@
     "name": "s3-resizer",
     "version": "3.0.0",
     "dependencies": {
-        "sharp": "^0.23.1"
+        "sharp": "^0.23.3"
     },
     "devDependencies": {
         "aws-sdk": "^2.36.0"
