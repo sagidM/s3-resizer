@@ -1,6 +1,6 @@
 {
     "name": "s3-resizer",
-    "version": "3.0.0",
+    "version": "3.0.1",
     "dependencies": {
         "sharp": "^0.23.3"
     },
