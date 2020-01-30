@@ -139,9 +139,9 @@ or
 * * In **Runtime**, select the latest version of Node.js that you found on [Releases](https://github.com/sagidM/s3-resizer/releases)
 * * [You can now click on **Save** to save your time because it takes a while to upload a zip file]
 * * Set up these three **Environment variables** _(format: key=value)_  
-**BUCKET**=_your bucket's name_
-**URL**=**Endpoint** you copied before (from Static website hosting)
-**WHITELIST**= your list (space-separated) of allowed size options (e.g. AUTOx150 300x200 100x100_max)
+**BUCKET**=_your bucket's name_  
+**URL**=**Endpoint** you copied before (from Static website hosting)  
+**WHITELIST**= your list (space-separated) of allowed size options (e.g. AUTOx150 300x200 100x100_max)  
 * * In **Basic settings**
 * * * Allocate 768mb memory
 * * * Timeout could be 5 seconds
