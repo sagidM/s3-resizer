@@ -7,13 +7,14 @@ const Sharp = require('sharp');
 const PathPattern = /(.*\/)?(.*)\/(.*)/;
 
 // parameters
-const {BUCKET, URL} = process.env;
+const {BUCKET, URL, WHITELIST} = process.env;
 
 
 exports.handler = async (event) => {
     const path = event.queryStringParameters.path;
     const parts = PathPattern.exec(path);
     const dir = parts[1] || '';
+    const sizeOption = parts[2];
     const options = parts[2].split('_');
     const filename = parts[3];
 
@@ -21,6 +22,19 @@ exports.handler = async (event) => {
     const sizes = options[0].split("x");
     const action = options.length > 1 ? options[1] : null;
 
+    // Whitelist validation.
+    if (WHITELIST) {
+        const whitelistArr = WHITELIST.split(' ');
+        if (!whitelistArr.includes(sizeOption)) {
+            return {
+                statusCode: 400,
+                body: `Unknown size parameter "${sizeOption}"`,
+                headers: {"Content-Type": "text/plain"}
+            };
+        }
+    }
+
+    // Action validation.
     if (action && action !== 'max' && action !== 'min') {
         return {
             statusCode: 400,
