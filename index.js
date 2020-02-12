@@ -7,31 +7,30 @@ const Sharp = require('sharp');
 const PathPattern = /(.*\/)?(.*)\/(.*)/;
 
 // parameters
-const {BUCKET, URL, WHITELIST} = process.env;
+const {BUCKET, URL} = process.env;
+const WHITELIST = process.env.WHITELIST
+    ? Object.freeze(process.env.WHITELIST.split(' '))
+    : null;
 
 
 exports.handler = async (event) => {
     const path = event.queryStringParameters.path;
     const parts = PathPattern.exec(path);
     const dir = parts[1] || '';
-    const sizeOption = parts[2];
-    const options = parts[2].split('_');
+    const resizeOption = parts[2];  // e.g. "150x150_max"
+    const sizeAndAction = resizeOption.split('_');
     const filename = parts[3];
 
-
-    const sizes = options[0].split("x");
-    const action = options.length > 1 ? options[1] : null;
+    const sizes = sizeAndAction[0].split("x");
+    const action = sizeAndAction.length > 1 ? sizeAndAction[1] : null;
 
     // Whitelist validation.
-    if (WHITELIST) {
-        const whitelistArr = WHITELIST.split(' ');
-        if (!whitelistArr.includes(sizeOption)) {
-            return {
-                statusCode: 400,
-                body: `Unknown size parameter "${sizeOption}"`,
-                headers: {"Content-Type": "text/plain"}
-            };
-        }
+    if (WHITELIST && !WHITELIST.includes(resizeOption)) {
+        return {
+            statusCode: 400,
+            body: `WHITELIST is set but does not contain the size parameter "${resizeOption}"`,
+            headers: {"Content-Type": "text/plain"}
+        };
     }
 
     // Action validation.
