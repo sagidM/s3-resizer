@@ -4,17 +4,17 @@
 const AWS = require('aws-sdk');
 const S3 = new AWS.S3({signatureVersion: 'v4'});
 const Sharp = require('sharp');
-const PathPattern = /(.*\/)?(.*)\/(.*)/;
+const PathPattern = /\/(.*\/)?(.*)\/(.*)/;
 
 // parameters
-const {BUCKET, URL} = process.env;
+const {SOURCE_BUCKET, DESTINATION_BUCKET, URL} = process.env;
 const WHITELIST = process.env.WHITELIST
     ? Object.freeze(process.env.WHITELIST.split(' '))
     : null;
 
 
 exports.handler = async (event) => {
-    const path = event.queryStringParameters.path;
+    const path = event.path;
     const parts = PathPattern.exec(path);
     const dir = parts[1] || '';
     const resizeOption = parts[2];  // e.g. "150x150_max"
@@ -45,7 +45,7 @@ exports.handler = async (event) => {
 
     try {
         const data = await S3
-            .getObject({Bucket: BUCKET, Key: dir + filename})
+            .getObject({Bucket: SOURCE_BUCKET, Key: dir + filename})
             .promise();
 
         const width = sizes[0] === 'AUTO' ? null : parseInt(sizes[0]);
@@ -69,15 +69,15 @@ exports.handler = async (event) => {
 
         await S3.putObject({
             Body: result,
-            Bucket: BUCKET,
+            Bucket: DESTINATION_BUCKET,
             ContentType: data.ContentType,
-            Key: path,
+            Key: path.slice(1),
             CacheControl: 'public, max-age=86400'
         }).promise();
 
         return {
             statusCode: 301,
-            headers: {"Location" : `${URL}/${path}`}
+            headers: {"Location" : `${URL}${path}`}
         };
     } catch (e) {
         return {
