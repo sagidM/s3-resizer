@@ -30,142 +30,115 @@ or
 
 ## Setting up
 
-#### To resize images we need a storage, which is _S3_ (but could be CloudFront), and _Lambda_ function. Then we should set up all the permissions and redirection rules.
+s3-resizer can be easily bootstrapped using [Terraform](https://www.terraform.io/). If you would rather do it manually, you can take a look at the [old setup instructions](https://github.com/sagidM/s3-resizer/blob/75449094dea01c880d8bf253add2ca4326b9b1c8/README.md).
 
-* Create a **Bucket**  
-* * Go to [Services -> Storage -> S3](https://s3.console.aws.amazon.com/s3/home)
-* * Click on the blue button **Create bucket**
-* * Enter the name and click on **Create**
+### Prerequisites
 
-* Create a **Lambda**
-* * Go to [Services -> Compute -> Lambda](https://console.aws.amazon.com/lambda/home)
-* * **Create a function -> Author from scratch**
-* * Enter a name (e.g. s3-resizer)
-* * Select the latest version of Node.js according to [Releases](https://github.com/sagidM/s3-resizer/releases) (you can change it later)
-* * You need a role that has permission to **put** objects to your storage (aka policy). If you click on **Create function**, a default role will be created. You can edit it later or you can create and set up a role right now. To do that,
-* * There should be a link to [IAM console](https://console.aws.amazon.com/iam/home#/roles), go to there.
-* * * then **Create role -> Lambda -> Next: Permissions -> Create policy**, a new tab should open
-* * * on that tab, you can use **Visual Editor** or add this JSON
-```json
-{
-  "Version": "2012-10-17",
-  "Statement": [
-    {
-      "Effect": "Allow",
-      "Action": [
-        "logs:CreateLogGroup",
-        "logs:CreateLogStream",
-        "logs:PutLogEvents"
-      ],
-      "Resource": "arn:aws:logs:*:*:*"
-    },
-    {
-      "Effect": "Allow",
-      "Action": "s3:PutObject",
-      "Resource": "arn:aws:s3:::__BUCKET_NAME__/*"
-    }
-  ]
-}
-```
-> Pay attention to `__BUCKET_NAME__`
+* The [Terraform CLI](https://www.terraform.io/downloads.html) installed in your system, version `v0.12.25` or above.
+* The latest `s3-resizer` release for `nodejs_12.13.0`. You can grab it from [here](https://github.com/sagidM/s3-resizer/releases).
+* An [Amazon S3](https://aws.amazon.com/s3/) bucket where the source images will be stored. This bucket does not necessarily have to be public.
 
-* * * Name your policy, for example: *"access_to_putObject_policy"* and click on **Create policy**; you can close the tab
+    *Note: the Terraform plan does not create this bucket to facilitate integration with existing infrastructure.*
 
-* * * On the previous tab, update the policy list clicking on the button with reload image or reloading the page.
-* * * Select your policy clicking on the checkbox
-* * * Click on **Next: tags -> Next: Review**, name your role, for example, *"access_to_putObject_role"*
-* * * Click on **Create role**; you can close the tab.
+* An [AWS IAM](https://aws.amazon.com/iam/) user with administrator permissions and programmatic access. This user is temporary and should be deleted after the infrastructure creation finishes.
 
-* * Now you are again on the lambda creating page.
-* * Select **Use an existing role** and choose your role in the list, update the list if necessary.
-* * After clicking on **Create function**, the lambda should be created.
+* Optionally, if you want to host the service in a custom subdomain, you will need to provision an [AWS Certificate Manager](https://aws.amazon.com/certificate-manager/) certificate for your subdomain. If you don't specify a domain, the default CloudFront endpoint will be used.
 
-* Add a trigger, which will listen to http requests
-* * **YOUR_LAMBDA -> Add trigger -> API Gateway**
-* * You can select api that has prefix **-API** or **Create a new API**
-* * In **Security**, select **Open**, then click **Add**
-* * Now if you click on **API Gateway**, you should see **API endpoint**, something like  
-`https://some-id.execute-api.eu-central-1.amazonaws.com/your-stage/your-lambdas-name`
+    *Note: the Terraform plan does not create either the certificate, nor the validation DNS entries in your behalf. This is also to facilitate integration with existing infrastructure. For example, you may not want or be able to host your DNS on [Amazon Route 53](https://aws.amazon.com/route53/).*
 
-* Set up Static website hosting
-* * Having an API endpoint, go to your bucket created at the beginning and add permissions
-* * * **YOUR_BUCKET -> Permissions -> Block public access -> Edit**, uncheck **Block all public access**, **Save -> Confirm**
-* * * **YOUR_BUCKET -> Permissions -> Bucket policy** and paste
-```json
-{
-    "Version": "2012-10-17",
-    "Statement": [
-        {
-            "Sid": "AddPerm",
-            "Effect": "Allow",
-            "Principal": "*",
-            "Action": "s3:GetObject",
-            "Resource": "arn:aws:s3:::__BUCKET_NAME__/*"
-        }
-    ]
-}
-```
-> Pay attention to `__BUCKET_NAME__`. By the way, you are able to give an access not only to the whole bucket but also to a specific directory providing its path instead of __*__.
-* * Go to **Properties (next to Permissions) -> Static website hosting -> Select "Use this bucket to host a website"**
-* * In **Index document** paste any file, it'd be logical to name it _"index.html"_
-* * Paste this **Redirection rules**
-```xml
-<RoutingRules>
-  <RoutingRule>
-    <Condition>
-      <KeyPrefixEquals/>
-      <HttpErrorCodeReturnedEquals>404</HttpErrorCodeReturnedEquals>
-    </Condition>
-    <Redirect>
-      <Protocol>https</Protocol>
-      <HostName>__DOMAIN__</HostName>
-      <ReplaceKeyPrefixWith>__PATH_TO_LAMBDA__?path=</ReplaceKeyPrefixWith>
-      <HttpRedirectCode>307</HttpRedirectCode>
-    </Redirect>
-  </RoutingRule>
-</RoutingRules>
-```
-> Pay attention to `__DOMAIN__` and `__PATH_TO_LAMBDA__` (protocol is always _https_)  
-> This is your **API endpoint**. For example, if the url is `https://some-id.execute-api.us-east-1.amazonaws.com/your-stage/your-lambdas-name`, the correct xml nodes shall look like  
-```xml
-<HostName>some-id.execute-api.us-east-1.amazonaws.com</HostName>
-<ReplaceKeyPrefixWith>your-stage/your-lambdas-name?path=</ReplaceKeyPrefixWith>
-```
-* * At this state, before clicking on **Save**, copy your **Endpoint**. Do not mix it up. This is an endpoint of your Static website hosting, and it is http, not https.
+### Overview
 
-* Add `s3-resizer.zip` and make lambda work
-* * Go to your lambda and select Lambda layer (presumably, the API Gateway layer was selected instead)
-* * **Function code -> Code entry type -> Upload a .zip file** upload a zip file
-* * In **Runtime**, select the latest version of Node.js that you found on [Releases](https://github.com/sagidM/s3-resizer/releases)
-* * [You can now click on **Save** to save your time because it takes a while to upload a zip file]
-* * Set up the following **Environment variables** _(format: key=value)_  
-**BUCKET**=_your bucket's name_  
-**URL**=**Endpoint** you copied before (from Static website hosting)  
-**WHITELIST**=your list (space-separated) of allowed size options (e.g. AUTOx150 300x200 100x100_max). This parameter is optional, if not provided, the lambda will process everything  
-* * In **Basic settings**
-* * * Allocate 768mb memory
-* * * Timeout could be 5 seconds
-> It's mooore than enough. But you shouldn't care of limits because images cache, which means the lambda is called only for the first time. For example, [large png 29mb image](http://www.berthiaumeescalier.com/images/contenu/file/Big__Small_Pumkins.png) converts to _150x150_ in 1.8s with 1024mb memory allocated, 2.3 with 768, 3.5 with 512mb, and ~7s with 256 on Node.js 12.13. _(I guess these such different results is because of [GC](https://en.wikipedia.org/wiki/Garbage_collection_(computer_science)))_. For normal images, results are nearly the same _(400-700 mls)_.
-* * **Save** it. You are done!
+The Terraform plan will create:
 
-***
+* The [AWS Lambda](https://aws.amazon.com/lambda/) function containing the `s3-resizer` code.
+* An [API Gateway](https://aws.amazon.com/api-gateway/) API to interface with the function.
+* An [Amazon S3](https://aws.amazon.com/s3/) bucket where the image outputs will be stored.
 
-* Test your lambda (optional)
-* * Upload an image to your bucket and copy the full path to it. Check whether the image shows in your browser entering **"ENDPOINT/FULL_PATH"**
-> Attention. **Endpoint**  is your Static website hosting (http). If you added the image to the root of your bucket, than **FULL_PATH** should be just a name of the image.
-* * Go to lambda, click on **Test**, and paste this json:
-```json
-{
-  "queryStringParameters": {"path": __YOUR_IMAGE_PATH_WITH_SIZE_PREFIX__}
-}
-```
-> `__YOUR_IMAGE_PATH_WITH_SIZE_PREFIX__` - for example: `150x150/pretty_image.jpg`
+    *Note: this is a **different** bucket than the source bucket that **you must create manually**.*
+* An [Amazon CloudFront](https://aws.amazon.com/cloudfront/) distribution that will cache the images from the S3 bucket and distribute them to the internet.
+* All the necessary policies, roles and permissions to make everything work together.
 
-* * Go back to the bucket, a new directory _150x150_ must be created
+### Bootstrapping instructions
 
+1. Clone this repository:
 
-## How to use HTTPS
-The Amazon S3 website endpoints do not support HTTPS  
-https://docs.aws.amazon.com/AmazonS3/latest/dev/WebsiteHosting.html  
-As a workaround, you have to use your own domain.  
-Please check out https://github.com/sagidM/s3-resizer/issues/7  
+    ```
+    git clone https://github.com/sagidM/s3-resizer.git
+    ```
+   
+2. Navigate to the `infra` directory:
+
+    ```
+    cd s3-resizer/infra
+    ```
+   
+3. Place the `s3-resizer` code that you downloaded from the releases page inside the `infra` directory. It must be named exactly `s3-resizer_nodejs_12.13.0.zip`.
+
+4. Run:
+
+   ```
+   terraform init
+   ```
+   
+5. Add the AWS credentials to the environment:
+
+    ```
+    export AWS_ACCESS_KEY_ID="XXXXXXXXXXXXXXXXXXXX"
+    export AWS_SECRET_ACCESS_KEY="XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX"   
+    ```
+
+6. Run the Terraform plan:
+
+    ```
+    terraform plan -out tfplan \
+        -var 'source_bucket=my-source-s3-bucket-name' \
+        -var 'service_domain_name=img.example.com' \
+        -var 'size_whitelist=AUTOx150 300x200 100x100_max'
+    ```
+   
+   * In `source_bucket`, pass the name of the source bucket that you created.
+   * If you wish to use a custom domain, pass it in `service_domain_name`. If you want to use the default cloudfront generated domain, remove this line.
+   * In `size_whitelist`, define your whitelisted sizes. If you wish to allow any size, remove this line.
+   
+   *Note: you may change these values at any time by running the `plan` command again and applying the changes.*
+   
+7. Review the Terraform plan. You should see something like this:
+
+    ```
+    Plan: 13 to add, 0 to change, 0 to destroy.
+    
+    ------------------------------------------------------------------------
+    
+    This plan was saved to: tfplan
+    
+    To perform exactly these actions, run the following command to apply:
+        terraform apply "plan"
+    ```
+   
+8. Apply the Terraform plan:
+
+    ```
+    terraform apply tfplan && rm tfplan
+    ```
+
+    It will take a while. Afterwards, you should see something like this:
+
+    ```
+    Apply complete! Resources: 13 added, 0 changed, 0 destroyed.
+    
+    Outputs:
+    
+    cloudfront_endpoint = d37qm260myncmt.cloudfront.net
+    ```
+
+9. If you used a custom domain, you will need to set up the ALIAS or CNAME record. If you use [Amazon Route 53](https://aws.amazon.com/route53/), [this document explains how to do it](https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/routing-to-cloudfront-distribution.html#routing-to-cloudfront-distribution-config).
+
+    If you use a DNS provider other than Route 53, you will need to set up a CNAME record pointing to the generated CloudFront endpoint:
+    
+    ```
+    img.example.com. CNAME d37qm260myncmt.cloudfront.net
+    ```
+   
+10. A `terraform.tfstate` file will be created inside the `infra` directory. Keep this file somewhere safe, as it will allow to easily make modifications to the created infrastructure. For example, if you want to modify the whitelist, or add a custom domain, you will need this file.
+
+    It will also allow you to easily destroy all provisioned resources instead of having to delete them manually. Please keep in mind that in order to destroy the output S3 bucket, you will need to delete all items on it first, else `terraform destroy` will fail.
