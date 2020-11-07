@@ -109,21 +109,20 @@ or
 * * Go to **Properties (next to Permissions) -> Static website hosting -> Select "Use this bucket to host a website"**
 * * In **Index document** paste any file, it'd be logical to name it _"index.html"_
 * * Paste this **Redirection rules**
-```xml
-<RoutingRules>
-  <RoutingRule>
-    <Condition>
-      <KeyPrefixEquals/>
-      <HttpErrorCodeReturnedEquals>404</HttpErrorCodeReturnedEquals>
-    </Condition>
-    <Redirect>
-      <Protocol>https</Protocol>
-      <HostName>__DOMAIN__</HostName>
-      <ReplaceKeyPrefixWith>__PATH_TO_LAMBDA__?path=</ReplaceKeyPrefixWith>
-      <HttpRedirectCode>307</HttpRedirectCode>
-    </Redirect>
-  </RoutingRule>
-</RoutingRules>
+```json
+[
+  {
+    "Condition": {
+      "HttpErrorCodeReturnedEquals": "404"
+    },
+    "Redirect": {
+      "Protocol": "https",
+      "HostName": "__DOMAIN__",
+      "ReplaceKeyPrefixWith": "__PATH_TO_LAMBDA__?path=",
+      "HttpRedirectCode": "307"
+    }
+  }
+]
 ```
 > Pay attention to `__DOMAIN__` and `__PATH_TO_LAMBDA__` (protocol is always _https_)  
 > This is your **API endpoint**. For example, if the url is `https://some-id.execute-api.us-east-1.amazonaws.com/your-stage/your-lambdas-name`, the correct xml nodes shall look like  
