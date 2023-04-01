@@ -1,10 +1,12 @@
 {
     "name": "s3-resizer",
-    "version": "3.0.1",
+    "version": "4.0.0",
     "dependencies": {
-        "sharp": "^0.23.3"
+        "sharp": "^0.32.0"
     },
     "devDependencies": {
-        "aws-sdk": "^2.36.0"
-    }
+        "@aws-sdk/client-s3": "^3.304.0",
+        "@aws-sdk/lib-storage": "^3.304.0"
+    },
+    "type": "module"
 }
