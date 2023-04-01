@@ -1,3 +1,5 @@
 /node_modules
 package-lock.json
 *.zip
+.DS_Store
+/out
